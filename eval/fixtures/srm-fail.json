@@ -1,0 +1,11 @@
+{
+  "id": "srm-fail-52-48",
+  "method": "bayesian",
+  "observed": [208000, 192000],
+  "intended": [1, 1],
+  "preRegistration": {
+    "hypothesis": "new checkout lifts conversion",
+    "metric": "checkout_completed",
+    "segments": ["all"]
+  }
+}

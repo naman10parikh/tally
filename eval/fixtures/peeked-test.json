@@ -1,0 +1,10 @@
+{
+  "id": "peeked-day3",
+  "method": "frequentist-fixed-horizon",
+  "declaringWinner": true,
+  "currentN": 1200,
+  "preRegisteredN": 40000,
+  "direction": "winner",
+  "observed": [600, 600],
+  "intended": [1, 1]
+}

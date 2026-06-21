@@ -1,0 +1,17 @@
+{
+  "id": "valid-bayesian",
+  "method": "bayesian",
+  "declaringWinner": true,
+  "currentN": 50000,
+  "preRegisteredN": 40000,
+  "direction": "winner",
+  "observed": [25010, 24990],
+  "intended": [1, 1],
+  "preRegistration": {
+    "hypothesis": "the new onboarding lifts day-7 retention",
+    "metric": "day7_retention",
+    "segments": ["all"]
+  },
+  "retention": "bounded",
+  "conversionWindow": "24h"
+}

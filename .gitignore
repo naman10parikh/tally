@@ -39,3 +39,8 @@ flags/flags.json
 .claude/tally-gate.log
 # RSI deterministic-loop proposals (D2) — gated candidate diffs, runtime state, never committed
 .rsi/
+# eval runtime artifacts (E-cluster) — plan/capture output the acceptance asserts generate, not source
+eval/.plan-acc/
+eval/.plan-civariant/
+eval/.capture/
+eval/fixtures/sample-app/node_modules/

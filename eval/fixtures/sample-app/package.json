@@ -1,0 +1,12 @@
+{
+  "name": "tally-sample-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A small real Express app with a signup + checkout flow — the acceptance-test fixture tally instruments (real events, a real flag call-site, a real capture shape).",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "license": "MIT"
+}
