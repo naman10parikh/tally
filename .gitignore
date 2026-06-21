@@ -13,6 +13,7 @@ packages/web/.next/
 **/.DS_Store
 
 # Ephemeral harness state (never commit)
+.claude/settings.local.json
 .claude/worktrees/
 .claude/backups/
 .claude/scheduled_tasks.lock

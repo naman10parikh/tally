@@ -2,16 +2,28 @@
   "dsip": "0.1",
   "product": "tally",
   "levels": ["agent"],
+  "selection": "eval-gated",
+  "noSelfGrading": true,
+  "snapback": ["component", "repo"],
   "loop": {
     "cadence": "nightly",
-    "steps": ["refresh-brain", "re-verify-tool-matrix", "run-eval-pyramid", "propose", "validate", "ship"]
+    "deterministic": true,
+    "steps": [
+      "refresh-brain",
+      "re-verify-tool-matrix",
+      "run-eval-pyramid",
+      "propose",
+      "test-gate",
+      "commit"
+    ]
   },
-  "selection": "performance",
   "eval": {
-    "rubric": "eval/ (Hamel L1 assertions + L2 behavior + L3 trajectory; golden tasks from brain/BATTLE-TESTED-SCENARIOS.md)",
+    "rubric": "eval/ (Hamel L1 assertions + L2 behavior + L3 trajectory; golden tasks from brain/BATTLE-TESTED-SCENARIOS.md, each scenario's Acceptance criterion = the objective gate)",
     "gate": "acceptance-test-green && no-regression",
     "noSelfGrading": true
   },
-  "snapback": { "granularity": ["skill", "employee"], "vcs": "git" },
-  "externalIntelligence": { "enabled": true, "source": "vertical ecosystem watch (changelogs, issues, X) per brain/TOOL-MATRIX.md" }
+  "externalIntelligence": {
+    "enabled": true,
+    "source": "vertical ecosystem watch per brain/TOOL-MATRIX.md — re-verify the HogQL 120/hr cap (PostHog#28184), the archived/dead-repo set (PostHog/mcp 2026-01-19, posthog-js-lite), and the OpenFeature spec gaps (#371/#374/#346)"
+  }
 }
