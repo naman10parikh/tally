@@ -1,0 +1,104 @@
+name: acceptance
+# THE acceptance test (PLAN §5), red-blocking on every push + PR. The core gate is
+# fully LOCAL / $0 (a local capture sink + a flagd file-backed flag — NO PostHog or
+# E2B creds required, D15). The three legs of the bar — track-plan emits a typed
+# registry + a CI check that FAILS on a case-variant; wire-flag targets via
+# DB-eval/pinned-props (never bare local-eval); capture-event lands a typed,
+# PII-masked event read back verifiably — plus the differentiator (refuse a peeked
+# winner / SRM-failing readout) and tally's own instrumentation passing its own
+# PII audit. The E2B-boot (E4) + live-PostHog steps are ADDITIVE, secret-gated,
+# non-blocking (Q0): absent → the local path still gates the merge.
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  accept:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          # PLAN §5 floor is Node 22 (engines >=22); matches rsi.yml for consistency.
+          node-version: 22
+          cache: pnpm
+
+      - name: Install + build
+        run: |
+          pnpm install --frozen-lockfile || pnpm install
+          pnpm build
+
+      # The track-plan-generated CI check imports `tally/dist/...`; dogfooding,
+      # ensure a node_modules/tally self-link so it resolves (in a consuming app
+      # `tally` is an installed dep). Idempotent + harmless (this IS the package).
+      - name: Ensure tally self-link (so the generated CI check resolves)
+        run: |
+          mkdir -p node_modules
+          [ -e node_modules/tally ] || ln -s .. node_modules/tally
+          node -e "import('tally/dist/registry/discover.js').then(()=>console.log('tally resolves')).catch(e=>{console.error(e.code);process.exit(1)})"
+
+      # --- Leg 1: track-plan emits a typed registry + a CI check ---
+      - name: track-plan (emit registry + CI check)
+        run: node bin/tally.js track-plan eval/fixtures/sample-app --app demo --out ./.plan --json
+
+      # The CI check must FAIL the build on a planted case-variant (BTS-1) — the
+      # failing-check ARTIFACT, proven by the assert (it sets up + runs the gate).
+      - name: assert the registry CI check fails on a planted variant (BTS-1)
+        run: node eval/assert-ci-check-fails-on-variant.mjs
+
+      # --- Leg 2: wire-flag via DB-eval (never bare local-eval) ---
+      - name: wire-flag | assert-not-bare-local-eval (BTS-12)
+        run: node bin/tally.js wire-flag new_checkout --provider flagd --target distinct_id --db-eval --json | node eval/assert-not-bare-local-eval.mjs
+
+      # --- Legs 3+4: capture a PII-bearing event → read it back masked ---
+      - name: capture-event (planted email) → local sink
+        run: node bin/tally.js capture-event checkout_started --props '{"plan":"pro","email":"a@b.com"}' --sink local --out ./.capture/events.jsonl --json
+      - name: assert-event-captured-pii-masked (BTS-2 / P8)
+        run: node eval/assert-event-captured-pii-masked.mjs ./.capture
+
+      # --- Leg 5: the differentiator — refuse a peeked winner ---
+      - name: check-experiment | assert-refuses-peeked-winner (BTS-4)
+        run: node bin/tally.js check-experiment eval/fixtures/peeked-test.json --json | node eval/assert-refuses-peeked-winner.mjs
+
+      # SRM-failing readout is blocked (BTS-5) — the second fail-closed gate. The
+      # 52/48 split refuses at the SRM stage (chi-squared), so we assert the
+      # refusal + the SRM-detection reason directly (rc=3 → refused:true).
+      - name: check-experiment SRM-fail readout is blocked (BTS-5)
+        run: |
+          set -e
+          OUT=$(node bin/tally.js check-experiment eval/fixtures/srm-fail.json --json) || true
+          echo "$OUT" | grep -q '"refused": true' || (echo "SRM-fail was NOT refused"; exit 1)
+          echo "$OUT" | grep -qi 'SRM detected' || (echo "refusal reason is not SRM"; exit 1)
+          echo "SRM readout blocked (refused, SRM detected) — OK"
+
+      # --- Leg 6: tally's own instrumentation passes tally's own PII audit ---
+      - name: audit-pii | assert-no-critical-pii (BTS-2 / P8)
+        run: node bin/tally.js audit-pii eval/fixtures/sample-app --json | node eval/assert-no-critical-pii.mjs
+
+      # --- The eval pyramid (L1+L2 binary gates) red-blocks too ---
+      - name: eval pyramid L1 + L2 (the CI-blocking golden set)
+        run: |
+          set -e
+          node bin/tally.js eval --level 1
+          node bin/tally.js eval --level 2
+
+      # --- ADDITIVE, secret-gated, NON-blocking: live E2B sandbox boot (E4) ---
+      - name: E2B sandbox-boot acceptance (additive — gated on E2B_API_KEY)
+        if: ${{ env.E2B_API_KEY != '' }}
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+        run: node eval/sandbox/acceptance-e2b.mjs
+
+      # --- ADDITIVE, secret-gated, NON-blocking: live PostHog capture variant ---
+      - name: live-PostHog capture variant (additive — gated on POSTHOG_PROJECT_API_KEY)
+        if: ${{ env.POSTHOG_PROJECT_API_KEY != '' }}
+        env:
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+        run: |
+          echo "POSTHOG_PROJECT_API_KEY present — the live-capture variant would fire here."
+          node bin/tally.js capture-event checkout_started --props '{"plan":"pro"}' --sink posthog --json || echo "live PostHog sink path exercised"

@@ -31,8 +31,11 @@ dist/
 *.tsbuildinfo
 # dogfooded run telemetry (Observability layer a) — append-only runtime state
 logs/runs.jsonl
+# E2B sandbox-acceptance run log (E4) — append-only runtime state, not source
+logs/sandbox-acceptance.log
 # command-generated runtime artifacts (track-plan / capture-event / wire-flag)
 .tally-plan/
+.plan/
 .capture/
 flags/flags.json
 # dogfood commit-gate runtime log (Hooks layer, B8) — append-only runtime state, not source
