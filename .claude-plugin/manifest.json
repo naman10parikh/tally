@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "name": "tally",
+  "display_name": "tally — Product Analytics / Feature Flags / Experiments Employee",
+  "description": "The product-analytics + feature-flags + experiments employee — count what matters, once, correctly, and refuse to ship the silent-failure no alert will ever catch: a CI-gated event registry that fails the build on a case-variant event, OpenFeature flags wired DB-eval-or-pinned-props (never bare local-eval), PII masked at the edge, and SRM-first / peeking-impossible experiments that won't ship a fake winner. Product analytics only — LLM token spend is agentmoney's, app health is canary's, web stats are the Plausible plane. Powered by Energy.",
+  "version": "0.1.0",
+  "author": "Energy Platform",
+  "license": "MIT",
+  "repository": "https://github.com/naman10parikh/tally",
+  "keywords": ["claude-code", "product-analytics", "feature-flags", "experiments", "posthog", "openfeature", "flagd", "ab-testing", "anti-pattern", "harness", "energy"],
+  "cli": { "command": "tally", "bin": "./bin/tally.js" },
+  "mcpServers": {
+    "tally": { "command": "node", "args": ["./dist/mcp/server.js"], "env": {} }
+  },
+  "skills": [
+    "design-tracking-plan",
+    "safe-feature-flags",
+    "experiment-rigor",
+    "pii-safe-capture",
+    "agent-analytics-ops"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Write|Edit|MultiEdit", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/tally-commit-gate.js\"" }
+    ]
+  },
+  "agents": [
+    ".claude/agents/taxonomy-pii-auditor.md",
+    ".claude/agents/experiment-stats-reviewer.md"
+  ],
+  "a2a": "./.well-known/agent.json",
+  "install_instructions": "1. Install deps and build: pnpm install && pnpm build\n2. Add this plugin to Claude Code: Settings -> Plugins -> Add local plugin -> select this directory (or `claude plugin install tally`).\n3. The tally CLI, the tally MCP server (track_plan / wire_flag / capture_event / check_experiment / audit_pii / flag_sweep / migrate_plan / explain / search_brain), the 5 skills, the commit-gate hook (blocks $set-on-acquisition / case-variant events / reused flag keys / maskAllInputs:false / un-allowlisted PII keys / gen_ai.usage into PostHog), and the taxonomy-pii-auditor + experiment-stats-reviewer sub-agents are now available."
+}

@@ -1,0 +1,125 @@
+# tally
+
+> The product-analytics + feature-flags + experiments employee. Count what matters, once, correctly —
+> and refuse to ship the silent-failure that no alert will ever catch. An **enforcer, not a linter**:
+> a wall, not a warning. tally is a tool-employee consumed by **coding agents** (Claude Code, the
+> energy hub, sibling employees) via **CLI + MCP**, and by humans via a read-mostly cockpit. Powered by Energy.
+
+**Default stack (locked):** PostHog (analytics + flags + replay + experiments, agent-native MCP) ·
+OpenFeature (vendor-neutral call-site API) · flagd (the $0 OSS file-backed flag loop) · GrowthBook
+(serious-stats bolt-on via OpenFeature, NOT rip-and-replace) · Plausible CE (privacy web stats — a
+*different plane*).
+
+## The boundary — three planes (the most load-bearing fact)
+
+tally owns **in-app product events / funnels / retention / cohorts / experiments / feature flags**. It
+does NOT own these adjacent planes:
+
+- **`gen_ai.usage.*` LLM token spend / $/call / cost-per-model → agentmoney.** The cardinal refusal:
+  **NEVER pipe an LLM span into PostHog as a product event** (O18). tally never holds a token-cost metric.
+- **App health / errors / uptime / latency / SLO / on-call → canary.** Product behavior vs system health
+  — both can fire on one user action; different stores, different questions.
+- **Web pageview / referrer / UTM marketing stats → the Plausible/Fathom plane** (replaces GA4, not
+  PostHog). Web stats are not product events.
+- A **CDP (Segment/RudderStack)** is the collection pipe *in front of* PostHog, not an analytics
+  competitor (overkill below ≥3 destinations).
+
+## The four agent operating rules
+
+1. **Materialize recurring reads** — never loop raw HogQL (120/hr cap, actively tuned in PostHog#28184).
+   Typed queries over raw SQL.
+2. **DB-eval or pinned props for flag targeting** — never bare local-eval (same user → different value).
+3. **Never reuse a retired flag key** — tombstone forever; deprecate in three steps (Knight Capital, $440M).
+4. **Experiments Bayesian-or-sequential + SRM-first** — refuse a peeked / SRM-failing winner.
+
+## Docs
+
+- [AGENTS.md](AGENTS.md): how an agent uses tally — the full CLI/MCP tool list, the three-plane boundary,
+  the four operating rules, and what tally REFUSES.
+- [CLAUDE.md](CLAUDE.md): the operating creed + default stack + cluster build order (for a coding agent
+  working *inside* this harness).
+- [identity/SOUL.md](identity/SOUL.md): persona — Identity → Personality → Boundaries.
+- [brain/MOC - tally.md](brain/MOC%20-%20tally.md): the brain index (hub for the six expertise artifacts).
+- [README.md](README.md): one-line summary.
+
+## Tools — the CLI (`tally`)
+
+Every operation has a deterministic, `--json`, non-interactive path. `--help` lists every command;
+`--version` exits 0; exit 0 on success, non-zero on failure. Browser/computer-use is N/A.
+
+- `tally track-plan <dir> [--app] [--out] [--json]` — emit a typed, CI-gated event registry + a CI check
+  that **fails the build** on an unregistered/case-variant/type-mutated event (J1, O1/O2, BTS-1).
+- `tally wire-flag <key> [--provider posthog|flagd] [--target …] [--json]` — wire a flag through
+  OpenFeature using **DB-eval or pinned props (never bare local-eval)** + a blast-radius pre-check
+  (J4, O7/O15, BTS-12, P1/P2).
+- `tally capture-event <name> [--props <json>] [--sink local|posthog] [--json]` — fire a
+  registry-conformant typed event with **PII masked at the edge** + two-call `identify()`
+  (`$set_once` acquisition) (J2/J3, O3/O4, BTS-2/3, P8).
+- `tally check-experiment <id|spec> [--json]` — **SRM-first → peeking-guard → pre-registration →
+  multiple-comparison → CUPED/means/retention checks.** Fails closed, never advisory — the differentiator
+  (J5, O5/O6, BTS-4/5/16/17, P13–P17).
+- `tally audit-pii <dir> [--json]` — scan the four PII hiding places; verify mask-all-then-allowlist
+  across web/iOS/RN (J3, O4, BTS-2, P8).
+- `tally flag-sweep [--json]` — surface zombie flags (age + last-eval + owner), temporary≠permanent,
+  removal diff, **refuse to reuse a retired key** (tombstone) (J6, O10/O11, BTS-6, P27).
+- `tally migrate-plan --from --to [--json]` — dual-write + reconcile + **explain the delta** + event-id
+  idempotency key + `flush()` >10k + derived-assets warning (J8, O16, BTS-7/8/14, P19–P23).
+- `tally read --query funnel|retention|trends [--materialize] [--json]` — typed queries, **materialize
+  recurring reads**, bounded retention + explicit conversion windows (J8, O13, BTS-11, P11/P17/P18).
+- `tally brain <query>` — BM25 search over `brain/` → ranked hits (the Memory queryable layer).
+- `tally explain <BTS-/P-/O-/J-id>` — print the scenario/pitfall/opinion/job by ID.
+- `tally eval [--level 1|2|3]` — run the eval pyramid (L1 structural + L2 golden behavioral).
+
+## Tools — the MCP server
+
+tally ships its **own** MCP server (`stdio://tally-mcp`; a documented Streamable-HTTP path behind
+`MCP_HTTP=1`) exposing the expertise operations:
+
+- `track_plan` · `wire_flag` · `capture_event` · `check_experiment` · `audit_pii` · `flag_sweep` ·
+  `migrate_plan` · `explain` · `search_brain`
+
+It also **consumes** the hosted PostHog MCP (`https://mcp.posthog.com/mcp`) for the query/operate lens —
+**never the archived `PostHog/mcp` repo** (P9). Keys are env refs only; never committed. Registered in
+[.mcp.json](.mcp.json).
+
+## Skills (`skills/`)
+
+Each is invokable from another harness (the energy hub); each has `## Trigger` / `## Steps` / `## Output`
+and encodes a specific OPINION/PITFALL.
+
+- [design-tracking-plan](skills/design-tracking-plan/SKILL.md): the CI-gated canonical registry — gate the
+  taxonomy in CI, not a wiki (O1/O2 + J1 + BTS-1).
+- [safe-feature-flags](skills/safe-feature-flags/SKILL.md): OpenFeature + DB-eval-or-pinned-props +
+  expiry+owner + never-reuse-a-key (O7/O11/O15 + J4/J6 + BTS-6/10/12 + P27).
+- [experiment-rigor](skills/experiment-rigor/SKILL.md): SRM-first + peeking-impossible — refuse a fake
+  winner, the differentiator (O5/O6/O8/O9 + J5 + BTS-4/5/16/17 + P13–P17).
+- [pii-safe-capture](skills/pii-safe-capture/SKILL.md): mask-all-then-allowlist, fail closed at the edge
+  (O4 + J3 + BTS-2 + P8).
+- [agent-analytics-ops](skills/agent-analytics-ops/SKILL.md): materialize reads + typed-queries + safe
+  migrations + the dead-repo/`wizard --ci` traps (O13/O14/O16 + J8 + BTS-7/8/9/11/14 + P9/P10/P11).
+
+## The brain (authoritative, queryable) — ID index
+
+Query it with `tally brain <query>` / `tally explain <id>`. Version-sensitive facts are re-verified at
+build time.
+
+- **J1–J8** — jobs-to-be-done ([brain/EXPERTISE-MAP.md](brain/EXPERTISE-MAP.md)): taxonomy-that-won't-rot ·
+  identity-stitch · PII-fail-closed · flag-targeting · experiment-stats · flag-debt · autocapture-vs-explicit ·
+  agent-operator-mechanics.
+- **O1–O20** — opinions ([brain/OPINIONS.md](brain/OPINIONS.md)): every stance is "ALWAYS X / NEVER Y —
+  because Z (source)"; O18 = the three-plane cardinal refusal; O20 = enforcer-not-linter.
+- **P1–P27** — known pitfalls ([brain/KNOWN-PITFALLS.md](brain/KNOWN-PITFALLS.md)): P1 bare-local-eval ·
+  P8 PII-hiding-places · P9 archived PostHog/mcp · P10 `wizard --ci` · P11 HogQL-120/hr · P27 Knight Capital
+  flag-key-reuse.
+- **BTS-1–BTS-17** — battle-tested scenarios ([brain/BATTLE-TESTED-SCENARIOS.md](brain/BATTLE-TESTED-SCENARIOS.md)):
+  each carries an **Acceptance criterion** that IS the eval gate (an eval passes only if tally's output
+  produces that criterion, not if it merely discusses the topic).
+- [brain/TOOL-MATRIX.md](brain/TOOL-MATRIX.md) — the tool/version pins. [brain/GAPS-AND-DISPUTES.md](brain/GAPS-AND-DISPUTES.md)
+  — the re-verify-at-build-time watchlist.
+
+## What tally REFUSES (hard)
+
+No `gen_ai.usage.*` into PostHog · no bare local-eval targeting · no flag-key reuse · no peeked/
+SRM-failing winner shipped · no `wizard --ci` autonomous flow (headless wall, P10) · no cloning the
+archived `PostHog/mcp` repo (P9) · no GA4 as a product-analytics default (P25) · no net-new Statsig
+standardization without an OpenFeature wrapper.

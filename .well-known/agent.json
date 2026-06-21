@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "0.1",
+  "name": "tally",
+  "description": "The product-analytics + feature-flags + experiments employee — a CI-gated event registry that fails the build on a case-variant event, OpenFeature flags wired DB-eval-or-pinned-props (never bare local-eval), PII masked at the edge, and SRM-first / peeking-impossible experiments that refuse to ship a fake winner. Product analytics + flags + experiments only — LLM token spend is agentmoney's, app health is canary's, web stats are the Plausible plane (NEVER pipe gen_ai.usage.* into PostHog). Powered by Energy.",
+  "version": "0.1.0",
+  "provider": { "organization": "Energy", "url": "https://github.com/naman10parikh/tally" },
+  "endpoint": "stdio://tally-mcp",
+  "transport": "stdio",
+  "documentationUrl": "https://github.com/naman10parikh/tally/blob/main/AGENTS.md",
+  "capabilities": [
+    "track-plan",
+    "wire-flag",
+    "capture-event",
+    "check-experiment",
+    "audit-pii",
+    "flag-sweep",
+    "brain",
+    "explain"
+  ],
+  "plannedCapabilities": [
+    "migrate-plan",
+    "read-materialize"
+  ],
+  "skills": [
+    {
+      "id": "design-tracking-plan",
+      "name": "Design a tracking plan that won't rot",
+      "description": "Emit a canonical, machine-readable, CI-gated event registry (the dedup ledger) — casing + type stability, server-side-first, autocapture-for-discovery-only. The tracking plan is CODE, not docs: the CI check FAILS the build on an unregistered/case-variant/type-mutated event (O1/O2 + J1 + BTS-1).",
+      "tags": ["analytics", "taxonomy", "tracking-plan", "ci-gate"]
+    },
+    {
+      "id": "safe-feature-flags",
+      "name": "Wire feature flags safely",
+      "description": "OpenFeature at the call-site, DB-eval or pinned-props (never bare local-eval — same user must not get different values), blast-radius pre-check, expiry+owner at creation, and NEVER reuse a retired flag key (Knight Capital, $440M). O7/O11/O15 + J4/J6 + BTS-6/10/12 + P27.",
+      "tags": ["feature-flags", "openfeature", "flagd", "rollout"]
+    },
+    {
+      "id": "experiment-rigor",
+      "name": "Decide an experiment correctly (the differentiator)",
+      "description": "SRM check FIRST (refuse-to-report on failure), peeking made structurally impossible (Bayesian/sequential), pre-registration as an eval contract, multiple-comparison correction, CUPED-only-with-covariate, bounded retention. Refuses to ship a peeked / SRM-failing winner. O5/O6/O8/O9 + J5 + BTS-4/5/16/17 + P13-P17.",
+      "tags": ["experiments", "ab-testing", "srm", "peeking"]
+    },
+    {
+      "id": "pii-safe-capture",
+      "name": "Keep PII out, fail closed",
+      "description": "Mask-all-then-allowlist across the four hiding places (autocapture input meta / replay DOM / URLs / identify() props) + before_send URL-scrub + three-platform opt-out (web/iOS/RN), dropping PII at the edge BEFORE storage. A one-way door — you can't un-ring the bell. O4 + J3 + BTS-2 + P8.",
+      "tags": ["privacy", "pii", "session-replay", "gdpr"]
+    },
+    {
+      "id": "agent-analytics-ops",
+      "name": "Operate analytics as an agent",
+      "description": "Materialize recurring reads (never loop raw HogQL -> 120/hr stall), typed-queries-over-SQL, project-vs-personal key class, own-the-raw-stream, dual-write + reconcile + explain-the-delta migrations, and the dead-repo / wizard --ci traps. O13/O14/O16 + J8 + BTS-7/8/9/11/14 + P9/P10/P11.",
+      "tags": ["agent-ops", "hogql", "migration", "warehouse"]
+    }
+  ],
+  "defaultInputModes": ["text"],
+  "defaultOutputModes": ["text"]
+}
