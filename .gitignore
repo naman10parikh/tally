@@ -35,3 +35,5 @@ logs/runs.jsonl
 .tally-plan/
 .capture/
 flags/flags.json
+# dogfood commit-gate runtime log (Hooks layer, B8) — append-only runtime state, not source
+.claude/tally-gate.log
