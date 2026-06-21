@@ -1,243 +1,86 @@
 #!/bin/bash
-# memory-search.sh — Search across Energy's memory system with relevance scoring
-# Usage: ./scripts/memory-search.sh "query" [--limit N] [--verbose]
+# memory-search.sh — tally's queryable Memory layer (BM25F over the expertise brain).
 #
-# Searches: LEARNINGS.md, daily/*.md, topics/*.md, vault/*.md, rules/*.md
-# Scoring: term frequency x recency x source weight
-# Returns: top N results (default 5) with file path + surrounding context
+# tally's Memory is its expertise `brain/` (the six Wave-R artifacts), not code or
+# commit history (HARNESS-OVERRIDES §2). This script is the shell surface of the
+# Memory ✅ criterion's OR-branch — it delegates to the shared BM25F engine in
+# `src/memory/bm25.ts` (the same engine the B-track `tally brain`/`tally explain`
+# CLI wraps). It is independent of B1 (no package.json/bin needed — runs via tsx).
+#
+# Usage:
+#   ./scripts/memory-search.sh "<query>" [--limit N] [--json]   ranked brain hits
+#   ./scripts/memory-search.sh explain <BTS-/P-/O-/J-/A-id> [--json]
+#   ./scripts/memory-search.sh --legacy "<query>"               old grep over memory/ (fallback)
+#
+# Examples:
+#   ./scripts/memory-search.sh "peeking winner noise"   -> BTS-4 + O6 in the top hits
+#   ./scripts/memory-search.sh "reuse flag key"         -> BTS-6 + P27
+#   ./scripts/memory-search.sh explain P27              -> the Knight Capital pitfall
 
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-MEMORY_DIR="$PROJECT_DIR/memory"
-VAULT_DIR="$PROJECT_DIR/vault"
-RULES_DIR="$PROJECT_DIR/.claude/rules"
+BM25_ENGINE="$PROJECT_DIR/src/memory/bm25.ts"
+BRAIN_DIR="$PROJECT_DIR/brain"
 
-# Parse arguments
-QUERY=""
-LIMIT=5
-VERBOSE=false
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --limit)
-      LIMIT="$2"
-      shift 2
-      ;;
-    --verbose)
-      VERBOSE=true
-      shift
-      ;;
-    --help|-h)
-      echo "Usage: memory-search.sh \"query\" [--limit N] [--verbose]"
-      echo ""
-      echo "Searches across Energy's memory system:"
-      echo "  - memory/LEARNINGS.md (learnings & patterns)"
-      echo "  - memory/daily/*.md (session logs)"
-      echo "  - memory/topics/*.md (permanent topic files)"
-      echo "  - vault/*.md (Obsidian notes)"
-      echo "  - .claude/rules/*.md (hard rules)"
-      echo ""
-      echo "Options:"
-      echo "  --limit N    Return top N results (default: 5)"
-      echo "  --verbose    Show scoring details"
-      exit 0
-      ;;
-    *)
-      QUERY="$1"
-      shift
-      ;;
-  esac
-done
-
-if [ -z "$QUERY" ]; then
-  echo "Error: No query provided"
-  echo "Usage: memory-search.sh \"query\" [--limit N] [--verbose]"
-  exit 1
-fi
-
-# Split query into individual terms for scoring
-IFS=' ' read -ra TERMS <<< "$QUERY"
-
-# Temp file for results
-RESULTS_FILE=$(mktemp)
-trap "rm -f $RESULTS_FILE" EXIT
-
-# Source weight map (higher = more authoritative)
-weight_for_source() {
-  local file="$1"
-  case "$file" in
-    */.claude/rules/*)   echo 5 ;;  # Rules are highest priority
-    */memory/LEARNINGS*) echo 4 ;;  # Learnings are core knowledge
-    */memory/topics/*)   echo 4 ;;  # Topic files are curated
-    */memory/daily/*)    echo 3 ;;  # Daily logs are session-scoped
-    */vault/*)           echo 2 ;;  # Vault is navigation layer
-    *)                   echo 1 ;;
-  esac
-}
-
-# Recency weight: files modified recently score higher
-recency_weight() {
-  local file="$1"
-  if [ ! -f "$file" ]; then
-    echo 1
-    return
-  fi
-  local age_days
-  # macOS stat
-  if stat -f %m "$file" >/dev/null 2>&1; then
-    local mod_epoch
-    mod_epoch=$(stat -f %m "$file")
-    local now_epoch
-    now_epoch=$(date +%s)
-    age_days=$(( (now_epoch - mod_epoch) / 86400 ))
+# Resolve a tsx runner (local node_modules first, then npx as a fallback).
+find_tsx() {
+  if [ -x "$PROJECT_DIR/node_modules/.bin/tsx" ]; then
+    echo "$PROJECT_DIR/node_modules/.bin/tsx"
+  elif command -v tsx >/dev/null 2>&1; then
+    echo "tsx"
   else
-    # Linux fallback
-    age_days=$(( ($(date +%s) - $(stat -c %Y "$file")) / 86400 ))
-  fi
-
-  if [ "$age_days" -le 1 ]; then
-    echo 10
-  elif [ "$age_days" -le 3 ]; then
-    echo 8
-  elif [ "$age_days" -le 7 ]; then
-    echo 6
-  elif [ "$age_days" -le 14 ]; then
-    echo 4
-  elif [ "$age_days" -le 30 ]; then
-    echo 2
-  else
-    echo 1
+    echo ""
   fi
 }
 
-# Score a file: count matching term occurrences (BM25-like term frequency)
-score_file() {
-  local file="$1"
-  local total_hits=0
-
-  for term in "${TERMS[@]}"; do
-    # Case-insensitive match count
-    local hits
-    hits=$(grep -ci "$term" "$file" 2>/dev/null | tr -d '[:space:]' || true)
-    hits=${hits:-0}
-    [ -z "$hits" ] && hits=0
-    total_hits=$((total_hits + hits))
+# ---------------------------------------------------------------------------
+# Legacy mode: the inherited Energy grep over memory/ + .claude/rules/ (kept as a
+# documented fallback so the generic behavior isn't lost; brain search is primary).
+# ---------------------------------------------------------------------------
+legacy_search() {
+  local QUERY="$1"
+  local MEMORY_DIR="$PROJECT_DIR/memory"
+  local RULES_DIR="$PROJECT_DIR/.claude/rules"
+  if [ -z "$QUERY" ]; then
+    echo "Error: No query provided" >&2
+    exit 1
+  fi
+  echo "=== Legacy memory grep: \"$QUERY\" ==="
+  local found=0
+  for dir in "$MEMORY_DIR" "$RULES_DIR"; do
+    [ -d "$dir" ] || continue
+    while IFS= read -r line; do
+      [ -n "$line" ] && { echo "$line"; found=1; }
+    done < <(grep -rni "$QUERY" "$dir" --include='*.md' 2>/dev/null | head -20)
   done
-
-  echo "$total_hits"
+  [ "$found" -eq 0 ] && echo "No results found for: $QUERY"
 }
 
-# Extract context around the best match in a file
-extract_context() {
-  local file="$1"
-  local context_lines=2
-
-  # Find the line with the most query terms
-  local best_line=0
-  local best_score=0
-
-  while IFS= read -r line_data; do
-    local line_num="${line_data%%:*}"
-    local line_content="${line_data#*:}"
-    local line_score=0
-
-    for term in "${TERMS[@]}"; do
-      if echo "$line_content" | grep -qi "$term" 2>/dev/null; then
-        line_score=$((line_score + 1))
-      fi
-    done
-
-    if [ "$line_score" -gt "$best_score" ]; then
-      best_score=$line_score
-      best_line=$line_num
-    fi
-  done < <(grep -ni "${TERMS[0]}" "$file" 2>/dev/null | head -20)
-
-  if [ "$best_line" -gt 0 ]; then
-    local start=$((best_line - context_lines))
-    [ "$start" -lt 1 ] && start=1
-    local end=$((best_line + context_lines))
-    sed -n "${start},${end}p" "$file" 2>/dev/null
-  fi
-}
-
-# Build file list to search
-FILES=()
-
-# LEARNINGS.md
-[ -f "$MEMORY_DIR/LEARNINGS.md" ] && FILES+=("$MEMORY_DIR/LEARNINGS.md")
-
-# Daily logs
-for f in "$MEMORY_DIR"/daily/*.md; do
-  [ -f "$f" ] && FILES+=("$f")
-done
-
-# Topic files
-for f in "$MEMORY_DIR"/topics/*.md; do
-  [ -f "$f" ] && FILES+=("$f")
-done
-
-# Vault notes
-for f in "$VAULT_DIR"/*.md; do
-  [ -f "$f" ] && FILES+=("$f")
-done
-
-# Rules
-for f in "$RULES_DIR"/*.md; do
-  [ -f "$f" ] && FILES+=("$f")
-done
-
-# Archive (lower priority but still searchable)
-for f in "$MEMORY_DIR"/archive/*.md; do
-  [ -f "$f" ] && FILES+=("$f")
-done
-
-# Score each file
-for file in "${FILES[@]}"; do
-  tf_score=$(score_file "$file")
-  [ "$tf_score" -eq 0 ] && continue
-
-  src_weight=$(weight_for_source "$file")
-  rec_weight=$(recency_weight "$file")
-
-  # Combined score: tf * source_weight * recency_weight
-  combined=$((tf_score * src_weight * rec_weight))
-
-  # Relative path for display
-  rel_path="${file#$PROJECT_DIR/}"
-
-  echo "$combined|$rel_path|$tf_score|$src_weight|$rec_weight" >> "$RESULTS_FILE"
-done
-
-# Sort by score descending and take top N
-if [ ! -s "$RESULTS_FILE" ]; then
-  echo "No results found for: $QUERY"
+# --- arg parse ---
+if [ "$#" -eq 0 ] || [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 fi
 
-echo "=== Memory Search: \"$QUERY\" ==="
-echo ""
+if [ "${1:-}" = "--legacy" ]; then
+  shift
+  legacy_search "${1:-}"
+  exit 0
+fi
 
-RANK=0
-sort -t'|' -k1 -nr "$RESULTS_FILE" | head -"$LIMIT" | while IFS='|' read -r score path tf sw rw; do
-  RANK=$((RANK + 1))
-  echo "[$RANK] $path (score: $score)"
+TSX="$(find_tsx)"
+if [ -z "$TSX" ] || [ ! -f "$BM25_ENGINE" ]; then
+  echo "[memory-search] BM25 engine unavailable (need tsx + src/memory/bm25.ts) — falling back to legacy grep." >&2
+  legacy_search "${*:-}"
+  exit 0
+fi
 
-  if [ "$VERBOSE" = true ]; then
-    echo "    term_freq=$tf  source_wt=$sw  recency_wt=$rw"
-  fi
+# explain <id> passthrough
+if [ "${1:-}" = "explain" ]; then
+  shift
+  exec "$TSX" "$BM25_ENGINE" explain "$@"
+fi
 
-  # Show context
-  full_path="$PROJECT_DIR/$path"
-  context=$(extract_context "$full_path")
-  if [ -n "$context" ]; then
-    echo "    ---"
-    echo "$context" | sed 's/^/    /'
-    echo "    ---"
-  fi
-  echo ""
-done
-
-TOTAL=$(wc -l < "$RESULTS_FILE" | tr -d ' ')
-echo "Found $TOTAL matching files. Showing top $LIMIT."
+# default: BM25F brain search. Pass through --limit / --json untouched.
+exec "$TSX" "$BM25_ENGINE" search "$@"
