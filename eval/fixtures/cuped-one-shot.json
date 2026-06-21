@@ -1,0 +1,13 @@
+{
+  "id": "cuped-one-shot",
+  "method": "bayesian",
+  "cupedEnabled": true,
+  "productType": "one-shot",
+  "metricType": "conversion",
+  "conversionWindow": "24h",
+  "preRegistration": {
+    "hypothesis": "the new PDP lifts e-commerce conversion",
+    "metric": "checkout_completed",
+    "segments": ["all"]
+  }
+}

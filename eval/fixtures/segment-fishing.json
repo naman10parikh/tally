@@ -1,0 +1,31 @@
+{
+  "id": "segment-fishing",
+  "method": "bayesian",
+  "preRegistration": {
+    "hypothesis": "the new banner lifts overall conversion",
+    "metric": "checkout_completed",
+    "segments": ["all"]
+  },
+  "segments": [
+    { "segment": "s1", "pValue": 0.6 },
+    { "segment": "s2", "pValue": 0.7 },
+    { "segment": "s3", "pValue": 0.8 },
+    { "segment": "s4", "pValue": 0.9 },
+    { "segment": "s5", "pValue": 0.55 },
+    { "segment": "s6", "pValue": 0.65 },
+    { "segment": "s7", "pValue": 0.75 },
+    { "segment": "s8", "pValue": 0.85 },
+    { "segment": "s9", "pValue": 0.45 },
+    { "segment": "s10", "pValue": 0.5 },
+    { "segment": "s11", "pValue": 0.6 },
+    { "segment": "s12", "pValue": 0.7 },
+    { "segment": "s13", "pValue": 0.8 },
+    { "segment": "s14", "pValue": 0.9 },
+    { "segment": "s15", "pValue": 0.55 },
+    { "segment": "s16", "pValue": 0.65 },
+    { "segment": "s17", "pValue": 0.75 },
+    { "segment": "s18", "pValue": 0.85 },
+    { "segment": "s19", "pValue": 0.45 },
+    { "segment": "s20", "pValue": 0.04 }
+  ]
+}

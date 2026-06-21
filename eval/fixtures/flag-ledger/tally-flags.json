@@ -1,0 +1,19 @@
+{
+  "flags": [
+    {
+      "key": "new_dashboard",
+      "type": "temporary",
+      "owner": "growth-team",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "lastEval": "2025-02-01T00:00:00.000Z"
+    },
+    {
+      "key": "billing_killswitch",
+      "type": "permanent",
+      "owner": "platform-team",
+      "createdAt": "2024-06-01T00:00:00.000Z",
+      "lastEval": "2026-06-20T00:00:00.000Z"
+    }
+  ],
+  "tombstones": ["power_peg"]
+}
