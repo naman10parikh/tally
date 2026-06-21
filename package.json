@@ -1,0 +1,54 @@
+{
+  "name": "tally",
+  "version": "0.1.0",
+  "description": "Product-analytics + feature-flags + experiments employee — count what matters, once, correctly; fail closed on the irreversible. Powered by Energy.",
+  "type": "module",
+  "bin": {
+    "tally": "./bin/tally.js"
+  },
+  "main": "./dist/cli/index.js",
+  "types": "./dist/cli/index.d.ts",
+  "files": [
+    "dist/",
+    "bin/",
+    "brain/",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "ai",
+    "claude",
+    "agent",
+    "product-analytics",
+    "feature-flags",
+    "experiments",
+    "posthog",
+    "openfeature",
+    "flagd",
+    "dev-tools"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "tally": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "eval": "tsx src/cli/index.ts eval",
+    "prepublishOnly": "pnpm build && pnpm test"
+  },
+  "dependencies": {
+    "@openfeature/server-sdk": "^1.22.0",
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}

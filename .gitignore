@@ -25,3 +25,13 @@ packages/web/.next/
 vault/Untitled*.base
 
 .env
+
+# tally — build output + runtime artifacts (B-CLI)
+dist/
+*.tsbuildinfo
+# dogfooded run telemetry (Observability layer a) — append-only runtime state
+logs/runs.jsonl
+# command-generated runtime artifacts (track-plan / capture-event / wire-flag)
+.tally-plan/
+.capture/
+flags/flags.json
