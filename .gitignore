@@ -37,3 +37,5 @@ logs/runs.jsonl
 flags/flags.json
 # dogfood commit-gate runtime log (Hooks layer, B8) — append-only runtime state, not source
 .claude/tally-gate.log
+# RSI deterministic-loop proposals (D2) — gated candidate diffs, runtime state, never committed
+.rsi/

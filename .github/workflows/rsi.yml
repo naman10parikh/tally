@@ -1,20 +1,60 @@
 name: tally RSI
-# CP123: dispatch-only until the RSI engine (workflows/rsi.workflow.js + eval gate) is built in Wave B/E.
-# The Claude half additionally needs CLAUDE_CODE_OAUTH_TOKEN (chairman checklist, D8). Guarded = always green.
+# ENABLED dispatch (D3): runs the deterministic, $0/tokenless RSI loop (D2) AND a
+# dogfood flag-debt-sweep + brain-pin re-verify check-in. NOT a stub — this is the
+# #1 fleet-gap lesson (CP117/CP122 burned on "written ≠ enabled"). The Claude half
+# (LLM-authored improvement) lights up only when CLAUDE_CODE_OAUTH_TOKEN is set
+# (chairman checklist, D8) — its absence is EXPECTED, not a failure.
 on:
   workflow_dispatch:
+  schedule:
+    # Nightly deterministic re-verify (rate-limit/archive/spec-gap watch). $0.
+    - cron: "17 9 * * *"
 
 permissions:
   contents: read
 
 jobs:
-  rsi:
+  rsi-deterministic:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Engine guard
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install + build
         run: |
-          if [ ! -f workflows/rsi.workflow.js ]; then
-            echo "RSI engine not built yet (CP123 cluster E) — exiting green."; exit 0
-          fi
-          echo "engine present — deterministic half would run here (wired in cluster E)"
+          pnpm install --frozen-lockfile || pnpm install
+          pnpm build
+
+      # (a) The deterministic RSI loop — refresh-brain → re-verify-tool-matrix
+      #     (rate-limit/archive/spec-gap watch) → run-eval-pyramid → propose →
+      #     test-gate → commit (gated; deterministic mode proposes, never commits).
+      - name: RSI deterministic loop (D2)
+        run: |
+          set -e
+          node workflows/rsi.workflow.js --deterministic
+          echo "deterministic RSI loop completed at \$0 (Claude half deferred behind CLAUDE_CODE_OAUTH_TOKEN, D8)"
+
+      # (b) Dogfood check-in: tally runs its OWN flag-debt-sweep + a brain-pin
+      #     re-verify on itself — the analytics employee obeying analytics rules.
+      - name: Dogfood flag-debt-sweep + brain-pin re-verify check-in
+        run: |
+          set -e
+          echo "── flag-debt-sweep (tally on tally) ──"
+          node bin/tally.js flag-sweep --json | tee /tmp/tally-flag-sweep.json
+          echo "── brain-pin re-verify (HogQL 120/hr + archived-repo + spec-gap pins intact) ──"
+          node bin/tally.js brain "HogQL rate limit materialize" --limit 3 --json | tee /tmp/tally-brain-pin.json
+          node bin/tally.js explain P9 | head -5
+          echo "dogfood check-in fired once."
+
+      # The Claude half: only when the token is present (D8). Dark = expected.
+      - name: RSI Claude half (deferred — gated on CLAUDE_CODE_OAUTH_TOKEN)
+        if: ${{ env.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          echo "CLAUDE_CODE_OAUTH_TOKEN present — the Claude half would author a gated improvement PR here."
