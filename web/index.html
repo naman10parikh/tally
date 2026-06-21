@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tally cockpit — product analytics · feature flags · experiments</title>
+    <!-- Instrument Serif (display) + Poppins (body) — the anti-AI-slop serif+sans pairing -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- warm-black token inlined so the served HTML carries #141312 even before CSS loads
+         (tally's brand is intentionally warm-black, NEVER AI-purple) -->
+    <style>
+      html {
+        background: #141312;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="masthead">
+        <div class="brand">
+          <span class="logo">tally</span>
+          <span class="tagline"
+            >Count what matters, once, correctly — and refuse to ship the silent-failure that no alert
+            will ever catch.</span
+          >
+        </div>
+        <span class="boundary">product analytics + flags + experiments only · token cost → agentmoney</span>
+      </header>
+
+      <nav class="tabs" role="tablist" aria-label="cockpit views">
+        <button role="tab" data-view="brain" aria-selected="true">Brain browser</button>
+        <button role="tab" data-view="runs" aria-selected="false">Run log</button>
+        <button role="tab" data-view="plan" aria-selected="false">Tracking plan</button>
+        <button role="tab" data-view="experiments" aria-selected="false">Experiment decisions</button>
+        <button role="tab" data-view="flags" aria-selected="false">Flag health</button>
+        <button role="tab" data-view="ask" aria-selected="false">Ask the employee</button>
+      </nav>
+
+      <!-- VIEW 1: Brain browser -->
+      <section class="view active" id="view-brain" role="tabpanel">
+        <h2>Brain browser</h2>
+        <p class="sub">
+          The six brain artifacts, rendered + BM25-searchable. Search a symptom, then click a hit
+          (BTS-/P-/O-/J-ID) to read situation → trap → resolution → acceptance → source. The expertise made
+          legible.
+        </p>
+        <div class="searchbar">
+          <input id="brain-q" type="search" placeholder="e.g. peeking winner noise, reuse flag key, mask PII at the edge" />
+          <button id="brain-go">Search</button>
+        </div>
+        <div class="bento-brain">
+          <div class="card">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 8px">
+              Artifacts
+            </div>
+            <div class="artifact-list" id="artifact-list"></div>
+          </div>
+          <div>
+            <div id="brain-hits"></div>
+            <div class="reader" id="brain-reader"><span class="empty">Search above or pick an artifact to read.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: Run log -->
+      <section class="view" id="view-runs" role="tabpanel">
+        <h2>Run log</h2>
+        <p class="sub">
+          <code>logs/runs.jsonl</code> tail — every <code>tally</code> run as a wide event: command, model,
+          measured duration, trace.id, outcome. The dogfooded trail tally preaches (O19 — a trace weighted by
+          intent, not a raw count).
+        </p>
+        <div class="card" id="runs-wrap"><span class="loading">Loading run log…</span></div>
+      </section>
+
+      <!-- VIEW 3: Tracking plan -->
+      <section class="view" id="view-plan" role="tabpanel">
+        <h2>Tracking plan</h2>
+        <p class="sub">
+          The canonical event registry rendered — every event with its typed schema, casing, and
+          "registered ✅ / autocaptured-fragile 🟡" status, plus the <strong>CI-gate</strong> that fails the
+          build on a case-variant. The J1 output made visible: the tracking plan is <em>code, not docs</em>
+          (O1/O2/BTS-1).
+        </p>
+        <div id="plan-wrap"><span class="loading">Scaffolding the registry from the sample-app fixture…</span></div>
+      </section>
+
+      <!-- VIEW 4: Experiment decisions (the differentiator) -->
+      <section class="view" id="view-experiments" role="tabpanel">
+        <h2>Experiment decisions</h2>
+        <p class="sub">
+          Per-experiment: the <strong>SRM check</strong> (50/50 vs observed split), the <strong>peeking
+          guard</strong> verdict (waiting-for-N / Bayesian-safe / refused), pre-registration status, and the
+          readout. The thing that stops a fake winner from shipping — far more actionable than a raw p-value
+          (J5 / O5 / O6 / BTS-4 / BTS-5).
+        </p>
+        <div id="exp-wrap"><span class="loading">Running SRM-first checks on every fixture…</span></div>
+      </section>
+
+      <!-- VIEW 5: Flag health -->
+      <section class="view" id="view-flags" role="tabpanel">
+        <h2>Flag health</h2>
+        <p class="sub">
+          Active flags with age + last-eval + owner + <strong>temporary-vs-permanent</strong> classification;
+          zombie flags in red; tombstoned keys that must never be reused. The J6 sweep made visible — "a feature
+          is not done when it ships, it's done when the flag is gone" (O10 / O11 / P27 — Knight Capital).
+        </p>
+        <div id="flags-wrap"><span class="loading">Sweeping the flag ledger…</span></div>
+      </section>
+
+      <!-- VIEW 6: Ask the employee -->
+      <section class="view" id="view-ask" role="tabpanel">
+        <h2>Ask the employee</h2>
+        <p class="sub">
+          Runs <code>tally brain</code> / <code>tally explain</code> read-only. "What does tally think about
+          peeking?" → O6 + BTS-4. Ask a scenario/pitfall/opinion ID directly (e.g. <code>BTS-4</code>,
+          <code>P27</code>, <code>O6</code>) for the full situation→resolution walk.
+        </p>
+        <div class="searchbar">
+          <input id="ask-q" type="search" placeholder="Ask a question, or type an ID like BTS-4 / P27 / O6 / J5" />
+          <button id="ask-go">Ask</button>
+        </div>
+        <div class="answer" id="ask-answer"></div>
+      </section>
+
+      <footer class="foot">
+        tally · read-mostly cockpit (does not create a flag / fire a capture / declare a winner from the
+        browser, PLAN Q7) · warm-black #141312 · Powered by Energy
+      </footer>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
