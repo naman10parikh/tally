@@ -37,7 +37,9 @@
     "tally": "tsx src/cli/index.ts",
     "test": "vitest run",
     "eval": "tsx src/cli/index.ts eval",
-    "prepublishOnly": "pnpm build && pnpm test"
+    "prepublishOnly": "pnpm build && pnpm test",
+    "serve": "bash scripts/serve.sh",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -51,6 +53,7 @@
     "@types/node": "^22.0.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "@playwright/test": "^1.61.0"
   }
 }

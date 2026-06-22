@@ -47,3 +47,8 @@ eval/.plan-acc/
 eval/.plan-civariant/
 eval/.capture/
 eval/fixtures/sample-app/node_modules/
+# Playwright cockpit E2E (G2) — generated artifacts. Screenshots are chairman-facing run output;
+# test-results/ + the HTML report are Playwright's. content/screenshots/README.md keeps the dir tracked.
+test-results/
+playwright-report/
+content/screenshots/*.png
