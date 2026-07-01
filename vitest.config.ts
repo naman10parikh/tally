@@ -13,5 +13,13 @@ export default defineConfig({
     include: ["tests/**/*.{test,spec}.ts", "eval/**/*.{test,spec}.ts"],
     exclude: ["tests/e2e/**", "node_modules/**", "dist/**", "eval/fixtures/**"],
     environment: "node",
+    // Deterministic timeouts. The eval-pyramid golden tasks (eval/l{1,2,3}) drive the REAL tally CLI
+    // via spawnSync (eval/harness.ts) — a single G1 task can spawn the binary several times (track-plan,
+    // the generated CI check as a subprocess, then a planted-variant re-run). With 7 test files running
+    // concurrently under CPU contention, those cold spawns intermittently blew past Vitest's default
+    // 5000ms testTimeout → flaky "Test timed out in 5000ms" on G1/G4/G13 (never an assertion failure).
+    // Raising the cap removes the flake without touching any test logic or the $0/no-creds layer.
+    testTimeout: 30000,
+    hookTimeout: 30000,
   },
 });
