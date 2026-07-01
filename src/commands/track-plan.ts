@@ -108,11 +108,22 @@ function jsKey(name: string): string {
 }
 
 /**
- * The CI-check artifact. A standalone `.mjs` that re-discovers events in a target
- * dir, re-loads the registry, runs `validateEvents`, prints violations, and exits
- * NON-ZERO if any exist — so a planted `Checkout Started` next to
- * `checkout_started` FAILS the build (BTS-1 acceptance criterion). It imports the
- * shared validator from tally's dist so the check stays in lockstep with the core.
+ * The CI-check artifact. A **self-contained** `.mjs` that re-discovers events in a
+ * target dir, re-loads the registry, runs the same validation logic, prints
+ * violations, and exits NON-ZERO if any exist — so a planted `Checkout Started`
+ * next to `checkout_started` FAILS the build (BTS-1 acceptance criterion).
+ *
+ * PORTABILITY (why this inlines the scanner/validator instead of importing from
+ * `tally/dist/...`): this artifact runs in the CUSTOMER'S repo/CI, where `tally`
+ * is NOT necessarily an installed dependency. A `import ... from "tally/dist/..."`
+ * makes `node ci-check-events.mjs` crash with `ERR_MODULE_NOT_FOUND` in exactly
+ * the place the gate is supposed to run — so the check could never fail-on-variant
+ * (the P0 deliverable would silently never run). The gate must depend on `node:`
+ * builtins ONLY. Lockstep with the core is preserved structurally: `track-plan`
+ * is the single generator, so the inlined logic is regenerated (never hand-edited)
+ * whenever the registry changes. The two inlined functions below are faithful,
+ * minimal ports of `discoverEvents` (EVENT_CALL scan) + `canonicalize`/
+ * `validateEvents` from src/registry/*.
  */
 function renderCiCheck(registryRelPath: string): string {
   return `#!/usr/bin/env node
@@ -121,13 +132,106 @@ function renderCiCheck(registryRelPath: string): string {
 // NON-ZERO on an unregistered / case-variant / type-mutated event. This is the
 // failing-CI-check ARTIFACT — running it on a planted variant fails the build.
 //
+// SELF-CONTAINED: depends on node: builtins ONLY, so it runs in a customer repo /
+// CI with no \`tally\` install (no ERR_MODULE_NOT_FOUND). Do not hand-edit —
+// regenerate via \`tally track-plan\` on any registry change.
+//
 // Usage: node ci-check-events.mjs [targetDir]   (defaults to cwd)
-import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { resolve, dirname, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { discoverEvents } from "tally/dist/registry/discover.js";
-import { validateEvents } from "tally/dist/registry/registry.js";
 
+// --- inlined scanner (faithful minimal port of src/registry/discover.ts) ---
+const CODE_EXTS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".vue", ".svelte"]);
+const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", ".next", "coverage"]);
+const EVENT_CALL = /\\b(?:capture|track)\\s*\\(\\s*['"\\\`]([^'"\\\`]+)['"\\\`]/g;
+
+function walk(dir, out = []) {
+  let entries;
+  try { entries = readdirSync(dir); } catch { return out; }
+  for (const name of entries) {
+    if (SKIP_DIRS.has(name)) continue;
+    const full = join(dir, name);
+    let st;
+    try { st = statSync(full); } catch { continue; }
+    if (st.isDirectory()) walk(full, out);
+    else if (CODE_EXTS.has(extname(name))) out.push(full);
+  }
+  return out;
+}
+
+function discoverEvents(dir) {
+  const out = [];
+  for (const planName of ["tracking-plan.json", "events.json"]) {
+    const planPath = join(dir, planName);
+    if (existsSync(planPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(planPath, "utf8"));
+        const names = Array.isArray(parsed)
+          ? parsed.map((e) => (typeof e === "string" ? e : e && typeof e.name === "string" ? e.name : null)).filter(Boolean)
+          : parsed && typeof parsed === "object"
+            ? (Array.isArray(parsed.events)
+                ? parsed.events.map((e) => (typeof e === "string" ? e : e && e.name)).filter(Boolean)
+                : Object.keys(parsed))
+            : [];
+        for (const name of names) out.push({ name, file: planName, line: 1 });
+      } catch { /* malformed plan: skip */ }
+    }
+  }
+  for (const file of walk(dir)) {
+    let text;
+    try { text = readFileSync(file, "utf8"); } catch { continue; }
+    const lines = text.split("\\n");
+    for (let i = 0; i < lines.length; i++) {
+      EVENT_CALL.lastIndex = 0;
+      let m;
+      while ((m = EVENT_CALL.exec(lines[i])) !== null) {
+        out.push({ name: m[1], file: file.slice(dir.length + 1), line: i + 1 });
+      }
+    }
+  }
+  return out;
+}
+
+// --- inlined validator (faithful port of canonicalize + validateEvents) ---
+function canonicalize(name) {
+  return name
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[\\s\\-.]+/g, "_")
+    .replace(/[^A-Za-z0-9_]+/g, "")
+    .toLowerCase()
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function validateEvents(reg, discovered) {
+  const byCanonical = new Map();
+  for (const ev of reg.events) {
+    const key = canonicalize(ev.name);
+    const existing = byCanonical.get(key);
+    if (existing && existing.name !== ev.name) continue;
+    byCanonical.set(key, ev);
+  }
+  const byExact = new Map(reg.events.map((e) => [e.name, e]));
+  const violations = [];
+  for (const ev of discovered) {
+    const canonical = canonicalize(ev.name);
+    const exact = byExact.get(ev.name);
+    const canon = byCanonical.get(canonical);
+    if (!canon) {
+      violations.push({ kind: "unregistered", event: ev.name, message: \`Event "\${ev.name}" is not in the registry — register it (the second engineer cannot bypass the ledger, O2).\` });
+      continue;
+    }
+    if (!exact && canon.name !== ev.name) {
+      violations.push({ kind: "case-variant", event: ev.name, canonical: canon.name, message: \`Event "\${ev.name}" is a case/format variant of registered "\${canon.name}" — fix the spelling (casing is a semantic boundary, BTS-1). Do NOT rename the historical stream; alias at query time.\` });
+      continue;
+    }
+  }
+  return violations;
+}
+
+// --- gate ---
 const here = dirname(fileURLToPath(import.meta.url));
 const targetDir = process.argv[2] ? resolve(process.argv[2]) : process.cwd();
 const registry = JSON.parse(readFileSync(resolve(here, ${JSON.stringify(registryRelPath)}), "utf8"));
