@@ -100,7 +100,7 @@ Level 3 holds the plan-graded tasks, which do not block CI.
 `pnpm test:e2e` runs the Playwright tests for the command line and the cockpit.
 
 **What does it not do?**
-The `posthog` capture sink is not wired yet. It masks the event but sends and stores nothing.
+The `posthog` capture sink is not built yet. `capture-event --sink posthog` says so and exits 1, and it sends and stores nothing.
 `read` and `migrate-plan` print queries and plans. They do not connect to an analytics service.
 It does not track LLM token spend or app health.
 The routing loop in [src/dispatch/route.ts](../src/dispatch/route.ts) runs the acceptance steps in order, but only its tests call it today.

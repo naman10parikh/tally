@@ -54,7 +54,7 @@ tally operates PostHog/flagd via MCP/CLI/REST, not a web browser.
 | --- | --- | --- |
 | `tally track-plan <dir> [--app] [--out] [--json]` | Emit a typed, CI-gated canonical event registry (the dedup ledger) + a CI check that **fails the build** on an unregistered/case-variant/type-mutated event | J1, O1/O2, BTS-1 |
 | `tally wire-flag <key> [--provider posthog|flagd] [--target …] [--json]` | Wire a flag through OpenFeature using **DB-eval or pinned props (never bare local-eval)** + a blast-radius pre-check | J4, O7/O15, BTS-12, P1/P2 |
-| `tally capture-event <name> [--props <json>] [--sink local|posthog] [--json]` | Fire a registry-conformant typed event with **PII masked at the edge** + two-call `identify()` (`$set_once` acquisition) | J2/J3, O3/O4, BTS-2/3, P8 |
+| `tally capture-event <name> [--props <json>] [--sink local|posthog] [--json]` | Fire a registry-conformant typed event with **PII masked at the edge** + two-call `identify()` (`$set_once` acquisition). Only the local sink is built: `--sink posthog` exits 1 and stores nothing | J2/J3, O3/O4, BTS-2/3, P8 |
 | `tally check-experiment <id|spec> [--json]` | **SRM-first → peeking-guard → pre-registration → multiple-comparison → CUPED/means/retention checks.** Fails closed, never advisory (the differentiator) | J5, O5/O6, BTS-4/5/16/17, P13–P17 |
 | `tally audit-pii <dir> [--json]` | Scan the four PII hiding places (autocapture input meta / replay DOM / URLs / `identify()` props); verify mask-all-then-allowlist across web/iOS/RN | J3, O4, BTS-2, P8 |
 | `tally flag-sweep [--json]` | Surface zombie flags (age + last-eval + owner), temporary≠permanent, removal diff, **refuse to reuse a retired key** (tombstone) | J6, O10/O11, BTS-6, P27 |

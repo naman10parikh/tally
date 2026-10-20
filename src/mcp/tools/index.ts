@@ -96,7 +96,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: {
       name: z.string().describe("event name"),
       props: z.record(z.string(), z.unknown()).optional().describe("event properties object"),
-      sink: z.enum(["local", "posthog"]).optional().describe("capture sink (default local)"),
+      sink: z.enum(["local", "posthog"]).optional().describe("capture sink (default local; posthog is not built yet and returns an error)"),
       distinctId: z.string().optional().describe("distinct_id to attribute the event to"),
       allow: z.array(z.string()).optional().describe("keys to allow past the PII mask (explicit allowlist)"),
     },

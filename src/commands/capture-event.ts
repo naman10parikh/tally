@@ -64,6 +64,18 @@ export function runCaptureEvent(name: string, opts: CaptureEventOptions): void {
     fail(opts.json, `event name "${name}" canonicalizes to empty`);
   }
 
+  // Only the local sink is built. Fail before anything runs, so no other sink is ever reported
+  // as "captured" while nothing was sent or stored.
+  if (opts.sink !== "local") {
+    run.finish("error", `sink "${opts.sink}" not built`);
+    fail(
+      opts.json,
+      opts.sink === "posthog"
+        ? "the PostHog sink is not built yet, so nothing was sent or stored. Use --sink local (the default)."
+        : `unknown sink "${String(opts.sink)}". Use --sink local (the default).`,
+    );
+  }
+
   const rawProps = parsePropsArg(opts.json, opts.props);
   const allowlist = new Set(
     (opts.allow ?? "").split(",").map((s) => s.trim()).filter(Boolean),
@@ -104,8 +116,6 @@ export function runCaptureEvent(name: string, opts: CaptureEventOptions): void {
       fail(opts.json, `capture-event wrote to the sink but the event could not be read back`);
     }
   }
-  // posthog sink: documented live path (behind POSTHOG_PROJECT_API_KEY) — the
-  // local sink is the merge gate per Q0/D15; the live path is additive.
 
   run.finish("ok");
 

@@ -86,7 +86,7 @@ export function buildProgram(): Command {
     .description("fire a registry-conformant typed event → capture sink with PII masked + two-call identify ($set_once acquisition) (acceptance leg 3; J2/J3/BTS-2/3)")
     .argument("<name>", "event name")
     .option("--props <json>", "event properties as a JSON object")
-    .option("--sink <sink>", "local | posthog", "local")
+    .option("--sink <sink>", "local | posthog (posthog is not built yet and exits 1)", "local")
     .option("--distinct-id <id>", "distinct_id to attribute the event to")
     .option("--registry <file>", "registry to validate against")
     .option("--out <file>", "local sink file (default: .capture/events.jsonl)")
