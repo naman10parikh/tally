@@ -16,6 +16,9 @@ permissions:
 jobs:
   rsi-deterministic:
     runs-on: ubuntu-latest
+    env:
+      # A step's own env is not visible to its if, so the Claude half reads this job-level flag.
+      HAS_CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -61,7 +64,7 @@ jobs:
 
       # The Claude half: only when the token is present (D8). Dark = expected.
       - name: RSI Claude half (deferred — gated on CLAUDE_CODE_OAUTH_TOKEN)
-        if: ${{ env.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        if: ${{ env.HAS_CLAUDE_TOKEN == 'true' }}
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
