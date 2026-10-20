@@ -1,0 +1,14 @@
+{
+  "name": "tally",
+  "owner": {
+    "name": "Naman Parikh",
+    "url": "https://github.com/naman10parikh"
+  },
+  "plugins": [
+    {
+      "name": "tally",
+      "source": "./",
+      "description": "Product analytics, feature flags and A/B tests that fail closed, starting from a CI-gated tracking plan."
+    }
+  ]
+}

@@ -4,7 +4,8 @@
   "description": "Product-analytics + feature-flags + experiments employee — count what matters, once, correctly; fail closed on the irreversible. Powered by Energy.",
   "type": "module",
   "bin": {
-    "tally": "./bin/tally.js"
+    "tally": "./bin/tally.js",
+    "tally-mcp": "./dist/mcp/server.js"
   },
   "main": "./dist/cli/index.js",
   "types": "./dist/cli/index.d.ts",
@@ -33,6 +34,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "dev": "tsc --watch",
     "tally": "tsx src/cli/index.ts",
     "test": "vitest run",

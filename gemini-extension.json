@@ -1,0 +1,17 @@
+{
+  "name": "tally",
+  "version": "0.1.0",
+  "description": "Product analytics, feature flags and A/B tests that fail closed, starting from a CI-gated tracking plan.",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "tally": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "-p",
+        "github:naman10parikh/tally",
+        "tally-mcp"
+      ]
+    }
+  }
+}

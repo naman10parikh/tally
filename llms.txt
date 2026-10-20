@@ -1,9 +1,12 @@
 # tally
 
-> The product-analytics + feature-flags + experiments employee. Count what matters, once, correctly —
-> and refuse to ship the silent-failure that no alert will ever catch. An **enforcer, not a linter**:
-> a wall, not a warning. tally is a tool-employee consumed by **coding agents** (Claude Code, the
-> energy hub, sibling employees) via **CLI + MCP**, and by humans via a read-mostly cockpit. Powered by Energy.
+> Product analytics, feature flags and A/B tests that fail closed, starting from a CI-gated tracking plan.
+
+The product-analytics + feature-flags + experiments employee, agent-native and recursively
+self-improving. Count what matters, once, correctly, and refuse to ship the silent failure that no alert
+will ever catch. An **enforcer, not a linter**: a wall, not a warning. tally is a tool-employee consumed
+by **coding agents** (Claude Code, the energy hub, sibling employees) via **CLI + MCP**, and by humans via
+a read-mostly cockpit. Powered by Energy.
 
 **Default stack (locked):** PostHog (analytics + flags + replay + experiments, agent-native MCP) ·
 OpenFeature (vendor-neutral call-site API) · flagd (the $0 OSS file-backed flag loop) · GrowthBook
@@ -40,11 +43,12 @@ does NOT own these adjacent planes:
   working *inside* this harness).
 - [identity/SOUL.md](identity/SOUL.md): persona — Identity → Personality → Boundaries.
 - [brain/MOC - tally.md](brain/MOC%20-%20tally.md): the brain index (hub for the six expertise artifacts).
-- [README.md](README.md): one-line summary.
+- [README.md](README.md): what it is, the quick start, and the one-step install for every coding agent.
 
 ## Tools — the CLI (`tally`)
 
-Every operation has a deterministic, `--json`, non-interactive path. `--help` lists every command;
+The CLI source is [src/cli/index.ts](src/cli/index.ts); run it from GitHub with
+`npx -y -p github:naman10parikh/tally tally --help`. Every operation has a deterministic, `--json`, non-interactive path. `--help` lists every command;
 `--version` exits 0; exit 0 on success, non-zero on failure. Browser/computer-use is N/A.
 
 - `tally track-plan <dir> [--app] [--out] [--json]` — emit a typed, CI-gated event registry + a CI check
@@ -72,15 +76,23 @@ Every operation has a deterministic, `--json`, non-interactive path. `--help` li
 
 ## Tools — the MCP server
 
-tally ships its **own** MCP server (`stdio://tally-mcp`; a documented Streamable-HTTP path behind
-`MCP_HTTP=1`) exposing the expertise operations:
+tally ships its **own** MCP server ([src/mcp/server.ts](src/mcp/server.ts), bin `tally-mcp`; a documented
+Streamable-HTTP path behind `MCP_HTTP=1`). Start it with `npx -y -p github:naman10parikh/tally tally-mcp`.
+It exposes the expertise operations, each a thin wrapper over the CLI:
 
-- `track_plan` · `wire_flag` · `capture_event` · `check_experiment` · `audit_pii` · `flag_sweep` ·
-  `migrate_plan` · `explain` · `search_brain`
+- [track_plan](src/mcp/tools/index.ts): the CI-gated event registry.
+- [wire_flag](src/mcp/tools/index.ts): an OpenFeature flag with DB-eval or pinned props.
+- [capture_event](src/mcp/tools/index.ts): a typed event with PII masked at the edge.
+- [check_experiment](src/mcp/tools/index.ts): SRM first, then the peeking guard; fails closed.
+- [audit_pii](src/mcp/tools/index.ts): scan the four PII hiding places.
+- [flag_sweep](src/mcp/tools/index.ts): zombie flags and retired-key tombstones.
+- [migrate_plan](src/mcp/tools/index.ts): dual-write, reconcile and explain the delta.
+- [explain](src/mcp/tools/index.ts): one scenario, pitfall, opinion or job by ID.
+- [search_brain](src/mcp/tools/index.ts): BM25 search over the brain.
 
 It also **consumes** the hosted PostHog MCP (`https://mcp.posthog.com/mcp`) for the query/operate lens —
-**never the archived `PostHog/mcp` repo** (P9). Keys are env refs only; never committed. Registered in
-[.mcp.json](.mcp.json).
+**never the archived `PostHog/mcp` repo** (P9). Keys are env refs only; never committed. The PostHog MCP
+is registered in `.mcp.dev.json` (it needs a key); load it with `claude --mcp-config .mcp.dev.json`.
 
 ## Skills (`skills/`)
 
@@ -97,6 +109,11 @@ and encodes a specific OPINION/PITFALL.
   (O4 + J3 + BTS-2 + P8).
 - [agent-analytics-ops](skills/agent-analytics-ops/SKILL.md): materialize reads + typed-queries + safe
   migrations + the dead-repo/`wizard --ci` traps (O13/O14/O16 + J8 + BTS-7/8/9/11/14 + P9/P10/P11).
+
+## Sub-agents
+
+- [taxonomy-pii-auditor](.claude/agents/taxonomy-pii-auditor.md): audits event-taxonomy hygiene and PII-leak risk before an instrumentation change ships.
+- [experiment-stats-reviewer](.claude/agents/experiment-stats-reviewer.md): audits experiment statistics and flag-evaluation correctness before a result ships or a flag rolls out.
 
 ## The brain (authoritative, queryable) — ID index
 
@@ -123,3 +140,12 @@ No `gen_ai.usage.*` into PostHog · no bare local-eval targeting · no flag-key 
 SRM-failing winner shipped · no `wizard --ci` autonomous flow (headless wall, P10) · no cloning the
 archived `PostHog/mcp` repo (P9) · no GA4 as a product-analytics default (P25) · no net-new Statsig
 standardization without an OpenFeature wrapper.
+
+## Optional
+
+- [MEMORY.md](MEMORY.md): the bootstrap memory (at most 2,000 tokens).
+- [memory/LEARNINGS.md](memory/LEARNINGS.md): corrections turned into rules.
+- [dsip.json](dsip.json): the self-improvement contract (Darwin DSIP, level L2).
+- [.well-known/agent.json](.well-known/agent.json): the A2A agent card.
+- [.claude-plugin/plugin.json](.claude-plugin/plugin.json): the Claude Code plugin.
+- [gemini-extension.json](gemini-extension.json): the Gemini CLI extension.

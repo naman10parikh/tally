@@ -39,6 +39,14 @@ jobs:
           node workflows/rsi.workflow.js --deterministic
           echo "deterministic RSI loop completed at \$0 (Claude half deferred behind CLAUDE_CODE_OAUTH_TOKEN, D8)"
 
+      - name: Keep the proposal for review (the loop proposes; a person merges)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rsi-proposals
+          path: .rsi/proposals/
+          if-no-files-found: ignore
+
       # (b) Dogfood check-in: tally runs its OWN flag-debt-sweep + a brain-pin
       #     re-verify on itself — the analytics employee obeying analytics rules.
       - name: Dogfood flag-debt-sweep + brain-pin re-verify check-in

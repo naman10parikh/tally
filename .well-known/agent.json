@@ -2,6 +2,7 @@
   "schemaVersion": "0.1",
   "name": "tally",
   "description": "The product-analytics + feature-flags + experiments employee — a CI-gated event registry that fails the build on a case-variant event, OpenFeature flags wired DB-eval-or-pinned-props (never bare local-eval), PII masked at the edge, and SRM-first / peeking-impossible experiments that refuse to ship a fake winner. Product analytics + flags + experiments only — LLM token spend is agentmoney's, app health is canary's, web stats are the Plausible plane (NEVER pipe gen_ai.usage.* into PostHog). Powered by Energy.",
+  "url": "https://github.com/naman10parikh/tally",
   "version": "0.1.0",
   "provider": { "organization": "Energy", "url": "https://github.com/naman10parikh/tally" },
   "endpoint": "stdio://tally-mcp",

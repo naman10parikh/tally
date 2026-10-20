@@ -10,9 +10,27 @@ A product-analytics + feature-flags + experiments employee. It treats the tracki
 (a CI-gated event registry), fails closed on the irreversible classes, and operates as an agent
 (materialized reads, typed queries). It is an **enforcer, not a linter** — a wall, not a warning.
 
-**Stack:** PostHog (analytics + flags + replay + experiments, agent-native MCP) · OpenFeature
-(call-site API) · flagd ($0 OSS file-backed flag loop) · GrowthBook (serious-stats bolt-on via
-OpenFeature, NOT rip-and-replace) · Plausible CE (privacy web stats — a *different plane*).
+## The enforcer creed (O20 — the meta-stance that governs all others)
+
+**A wall, not a warning.** The failures that *cannot be repaired after the fact* — identity fracture,
+PII-in-store, lost acquisition data, peeked winners shipped to prod, the reused-flag catastrophe, lost
+history on migration — must be **prevented at instrumentation/creation time and fail closed**, not
+surfaced as advice in a review. Everything reversible can be a warning; everything irreversible must be
+a wall. That is what makes tally a *harness* and not a dashboard.
+
+## The locked default stack
+
+- **PostHog** — the whole plane in one tool (analytics + flags + replay + experiments + warehouse),
+  uniquely agent-native via its 100+-tool MCP. Default backend; its honest weakness is depth not
+  breadth — **bolt on, don't rip out**.
+- **OpenFeature** — at every flag call-site (anti-lock-in; "HTTP for feature flags"). Use it for
+  *evaluation portability* today; fall back to vendor-specific for experiment telemetry / per-agent
+  isolation until the spec gaps (#371/#374/#346) close.
+- **flagd** — the $0 OSS file-backed flag loop (no SaaS key needed — the killer property for the
+  acceptance gate).
+- **GrowthBook** — the serious-stats bolt-on **via OpenFeature** when one experiment metric outgrows
+  PostHog's stats. NOT rip-and-replace.
+- **Plausible CE** — privacy web stats, a *different plane* (it replaces GA4, not PostHog).
 
 ## The boundary (three planes — the most load-bearing fact)
 
@@ -49,6 +67,9 @@ tally operates PostHog/flagd via MCP/CLI/REST, not a web browser.
 `--help` lists every command; `--version` exits 0; data commands take `--json`; exit 0 on success,
 non-zero on failure.
 
+Run it straight from GitHub with `npx -y -p github:naman10parikh/tally tally --help`, or from a clone
+with `pnpm install && pnpm build && node bin/tally.js --help`.
+
 ## Tools — the MCP server
 
 tally ships its **own** MCP server (stdio + a documented Streamable-HTTP path) exposing the
@@ -56,6 +77,10 @@ expertise operations: `track_plan` · `wire_flag` · `capture_event` · `check_e
 · `flag_sweep` · `migrate_plan` · `explain` · `search_brain`. It also **consumes** the hosted PostHog
 MCP (`https://mcp.posthog.com/mcp`) for the query/operate lens — **never the archived `PostHog/mcp`
 repo** (P9). Keys are env refs only; never committed.
+
+Start tally's server with `npx -y -p github:naman10parikh/tally tally-mcp` (the root `.mcp.json` does
+this) or `node dist/mcp/server.js` from a built clone. The PostHog MCP needs a key, so it is registered in
+`.mcp.dev.json` with the other development servers; load them with `claude --mcp-config .mcp.dev.json`.
 
 ## The four agent operating rules
 

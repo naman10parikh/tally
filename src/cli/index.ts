@@ -208,10 +208,14 @@ export async function main(argv: string[]): Promise<void> {
   await program.parseAsync(argv);
 }
 
-// Run only when invoked as the binary / via tsx (not when imported by a test).
+// Run only when invoked as the binary / via tsx (not when imported by a test). npm links the bin as
+// `.bin/tally` (no extension), so that name counts too; without it `npx ... tally` printed nothing.
 const invokedDirectly =
   process.argv[1] !== undefined &&
-  (process.argv[1].endsWith("index.ts") || process.argv[1].endsWith("index.js") || process.argv[1].endsWith("tally.js"));
+  (process.argv[1].endsWith("index.ts") ||
+    process.argv[1].endsWith("index.js") ||
+    process.argv[1].endsWith("tally.js") ||
+    /[\\/]tally$/.test(process.argv[1]));
 if (invokedDirectly) {
   main(process.argv).catch((err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);

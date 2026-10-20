@@ -2,9 +2,9 @@
   "dsip": "0.1",
   "product": "tally",
   "levels": ["agent"],
-  "selection": "eval-gated",
+  "selection": "performance",
   "noSelfGrading": true,
-  "snapback": ["component", "repo"],
+  "snapback": { "granularity": ["skill", "employee"], "vcs": "git" },
   "loop": {
     "cadence": "nightly",
     "deterministic": true,
@@ -13,8 +13,8 @@
       "re-verify-tool-matrix",
       "run-eval-pyramid",
       "propose",
-      "test-gate",
-      "commit"
+      "validate",
+      "ship"
     ]
   },
   "eval": {

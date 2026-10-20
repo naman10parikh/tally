@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * tally MCP server (Component 7). tally's OWN server exposing the
  * product-analytics + flags + experiments vertical's *expertise operations* —
@@ -104,11 +105,21 @@ export async function startHttp(port: number): Promise<void> {
   });
 }
 
-// Run when invoked directly as the binary (stdio by default; HTTP if MCP_HTTP=1).
+// Run when invoked directly or through the `tally-mcp` bin (npm links a bin under its own name, so
+// argv[1] ends in "tally-mcp"); stdio by default, HTTP if MCP_HTTP=1.
 const invokedDirectly =
   process.argv[1] !== undefined &&
-  (process.argv[1].endsWith("server.js") || process.argv[1].endsWith("server.ts"));
-if (invokedDirectly) {
+  (process.argv[1].endsWith("server.js") ||
+    process.argv[1].endsWith("server.ts") ||
+    process.argv[1].endsWith("tally-mcp"));
+if (invokedDirectly && (process.argv.includes("--help") || process.argv.includes("-h"))) {
+  process.stdout.write(
+    "tally-mcp: tally's MCP server over stdio (9 tools). Register it in an MCP client; " +
+      "MCP_HTTP=1 serves Streamable HTTP on PORT (8765), `--version` prints the version.\n",
+  );
+} else if (invokedDirectly && process.argv.includes("--version")) {
+  process.stdout.write(`${SERVER_INFO.version}\n`);
+} else if (invokedDirectly) {
   const run = process.env.MCP_HTTP === "1" ? startHttp(Number(process.env.PORT ?? 8765)) : startStdio();
   run.catch((err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);

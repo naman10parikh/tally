@@ -1,0 +1,17 @@
+{
+  "description": "tally's commit gate: blocks a write that adds an analytics anti-pattern (a case-variant event name, $set on acquisition, a reused flag key, a temporary flag with no expiry or owner, maskAllInputs false, an un-allowlisted PII key, gen_ai.usage sent to PostHog).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/.claude/hooks/tally-commit-gate.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
