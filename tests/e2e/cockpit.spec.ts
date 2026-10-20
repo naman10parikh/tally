@@ -1,7 +1,7 @@
 /**
  * tests/e2e/cockpit.spec.ts — tally cockpit E2E (G2, PLAN §9 E2E row + §10 design law).
  *
- * Drives the read-only cockpit (web/server.mjs) through all [removed] views and asserts each renders REAL
+ * Drives the read-only cockpit (web/server.mjs) through all six views and asserts each renders REAL
  * data, then writes a chairman-facing screenshot per view under content/screenshots/. Red-blocking:
  * the cockpit views must render. (PLAN §9 verify: brain-browser returns a query, run-log shows the
  * last `tally` run, the experiment-decisions view renders an SRM/peeking verdict, the flag-health
