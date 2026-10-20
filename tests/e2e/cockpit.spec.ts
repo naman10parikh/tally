@@ -60,7 +60,7 @@ test.describe("tally cockpit (read-mostly, warm-black)", () => {
     const rows = page.locator("#runs-wrap table tbody tr");
     await expect(rows.first()).toBeVisible({ timeout: 20_000 });
     // A recent run is on the model D14 pins, with a measured duration + a trace.id.
-    await expect(rows.first()).toContainText("claude-opus-4-8[1m]");
+    await expect(rows.first()).toContainText("default");
     await expect(rows.first()).toContainText("ms"); // measured duration column
     // trace.id column is non-empty (truncated hex + ellipsis).
     const trace = await rows.first().locator("td").nth(4).innerText();

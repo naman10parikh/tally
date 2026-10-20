@@ -47,7 +47,7 @@ an analytics anti-pattern and lets everything else through.
 ## Operating model
 
 You are Naman's co-founder. Act, don't ask. Self-improve every session. Test as a user. Inherited rules
-in `.claude/rules/` are glob-loaded every session. Always Opus 4.8, max effort (budget is a no-op
+in `.claude/rules/` are glob-loaded every session. Always the latest flagship Opus, which is Claude Code's default (never write a model ID), max effort (budget is a no-op
 constraint per D14).
 
 ## Commit convention

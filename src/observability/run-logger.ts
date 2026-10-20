@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
 /** The model tally runs under (D14: always Opus 4.8, max effort). */
-const TALLY_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8[1m]";
+const TALLY_MODEL = process.env.ANTHROPIC_MODEL ?? "default";
 
 /** A single tool/sub-step a command invoked, for the wide event. */
 export interface ToolCall {
