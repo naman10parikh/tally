@@ -100,8 +100,8 @@ export async function startHttp(port: number): Promise<void> {
     }
     res.writeHead(404).end();
   });
-  http.listen(port, () => {
-    process.stderr.write(`tally MCP (Streamable-HTTP) listening on http://localhost:${port}/mcp\n`);
+  http.listen(port, "127.0.0.1", () => {
+    process.stderr.write(`tally MCP (Streamable-HTTP) listening on http://127.0.0.1:${port}/mcp\n`);
   });
 }
 
