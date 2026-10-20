@@ -1,3 +1,3 @@
 # tally — Quickstart
 
-Where everything lives (the harness formula): see CLAUDE.md → "Harness components".
+The quick start lives in [README.md](README.md#quick-start). [AGENTS.md](AGENTS.md) is the one source of instructions for every coding agent.
