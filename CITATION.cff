@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "Tally: Product analytics, feature flags and A/B tests that fail closed, starting from a CI-gated tracking plan."
+type: software
+authors:
+  - family-names: Parikh
+    given-names: Naman
+repository-code: "https://github.com/naman10parikh/tally"
+license: MIT
+version: "0.1.0"
+abstract: "Product analytics, feature flags and A/B tests that fail closed, starting from a CI-gated tracking plan."
+keywords: ["agent-native", "product-analytics", "feature-flags", "ab-testing"]
